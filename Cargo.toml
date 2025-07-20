@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "client",
+    "hook",
+    "launcher",
+    "server",
+    "shared",
+]
+
+default-members = ["launcher"]
