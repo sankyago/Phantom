@@ -1,4 +1,6 @@
 #![recursion_limit = "1024"]
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use cpp::cpp;
 pub use d3drenderer::register_present_callback;
 use retour::static_detour;
@@ -20,7 +22,7 @@ mod keyboard;
 mod memory;
 #[macro_use]
 pub(crate) mod native_handling;
-#[allow(warnings)]
+#[allow(dead_code, unused_variables)]
 pub mod natives;
 mod replay_interface;
 mod script_patches;
@@ -31,7 +33,7 @@ static_detour! {
 }
 
 pub(crate) static mut SCRIPT_CALLBACK: Option<fn()> = None;
-static LABEL: &str = "Loading CryV Multiplayer\0";
+static LABEL: &str = "Loading Phantom Multiplayer\0";
 
 type AddressToEntity = fn(*mut c_void) -> i32;
 type SwapchainPresent = fn(*mut winapi::shared::dxgi::IDXGISwapChain, u32, u32) -> HRESULT;
@@ -89,7 +91,7 @@ fn swapchain_present(
         let obj = (&(obj as *const SwapchainPresent) as *const *const SwapchainPresent)
             as *const SwapchainPresent;
 
-        return (*obj)(swapchain, sync_interval, flags);
+        (*obj)(swapchain, sync_interval, flags)
     }
 }
 
@@ -203,14 +205,11 @@ fn hook_get_label_text() {
         GetLabelText.initialize(std::mem::transmute(POINTERS.get_label_text), get_label_text)
     } {
         error!("Error initializing GetLabelText hook: {}", error);
-
         return;
     }
 
     if let Err(error) = unsafe { GetLabelText.enable() } {
         error!("Error enabling GetLabelText hook: {}", error);
-
-        return;
     }
 }
 

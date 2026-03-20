@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::memory;
 
 #[repr(C)]
@@ -53,7 +55,7 @@ struct ScriptTableItem {
 
 impl ScriptTableItem {
     fn is_loaded(&self) -> bool {
-        self.header != std::ptr::null_mut()
+        !self.header.is_null()
     }
 }
 
@@ -66,7 +68,7 @@ struct ScriptTable {
 
 impl ScriptTable {
     fn find_script(&self, hash: i32) -> *mut ScriptTableItem {
-        if self.table_ptr == std::ptr::null_mut() {
+        if self.table_ptr.is_null() {
             return std::ptr::null_mut();
         }
 
@@ -95,8 +97,8 @@ impl GlobalTable {
 
     fn is_initialized(&self) -> bool {
         unsafe {
-            self.global_base_ptr != std::ptr::null_mut()
-                && *self.global_base_ptr != std::ptr::null_mut()
+            !self.global_base_ptr.is_null()
+                && !(*self.global_base_ptr).is_null()
         }
     }
 }
@@ -119,16 +121,16 @@ pub unsafe fn patch_multiplayer_vehicles() {
 
     let script_table = script_table_pointer as *mut ScriptTable;
 
-    while global_table.is_initialized() == false {
+    while !global_table.is_initialized() {
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
 
     let script_table_item = (*script_table).find_script(0x39DA738B);
-    if script_table_item == std::ptr::null_mut() {
+    if script_table_item.is_null() {
         return;
     }
 
-    while (*script_table_item).is_loaded() == false {
+    while !(*script_table_item).is_loaded() {
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
 
@@ -145,7 +147,7 @@ pub unsafe fn patch_multiplayer_vehicles() {
                 size,
             );
 
-            if address != std::ptr::null_mut() {
+            if !address.is_null() {
                 let global_index = (*(address.add(17) as *mut i32)) & 0xFFFFFF;
                 (*global_table.address_of(global_index)) = 1;
             }

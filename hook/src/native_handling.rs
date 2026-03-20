@@ -1,11 +1,13 @@
-use std::{ffi::c_void, sync::Mutex};
+#![allow(unsafe_op_in_unsafe_fn)]
+
+use std::ffi::c_void;
+use std::sync::{Mutex, OnceLock};
 
 use crate::crossmap::CROSSMAP;
 use crate::script_patches;
 use cpp::cpp;
 use retour::static_detour;
 use log::error;
-use once_cell::sync::OnceCell;
 use winapi::{
     shared::minwindef::LPVOID,
     um::{
@@ -55,11 +57,13 @@ struct FiberWrapper {
     pointer: *mut c_void,
 }
 
+// Safety: Fiber pointers are only accessed cooperatively through SwitchToFiber.
+// The fibers are never accessed concurrently from multiple OS threads.
 unsafe impl Send for FiberWrapper {}
 
-static MAIN_FIBER: OnceCell<Mutex<FiberWrapper>> = OnceCell::new();
-static SCRIPT_FIBER: OnceCell<Mutex<FiberWrapper>> = OnceCell::new();
-static mut WAKE_AT: u32 = 0; // TODO: Find better solution for this
+static MAIN_FIBER: OnceLock<Mutex<FiberWrapper>> = OnceLock::new();
+static SCRIPT_FIBER: OnceLock<Mutex<FiberWrapper>> = OnceLock::new();
+static mut WAKE_AT: u32 = 0;
 
 fn handler(hash: u64) -> Option<*mut c_void> {
     if hash == 0 {
@@ -88,19 +92,11 @@ fn handler(hash: u64) -> Option<*mut c_void> {
 }
 
 pub(crate) fn get_native_handler(hash: u64) -> Option<*mut c_void> {
-    // TODO: Implement native handler caching
-
-    match handler(hash) {
-        Some(value) => Some(value),
-        None => None,
-    }
+    handler(hash)
 }
 
 pub(crate) fn map_native(in_native: u64) -> Option<u64> {
-    match CROSSMAP.get(&in_native) {
-        Some(value) => Some(*value),
-        None => None,
-    }
+    CROSSMAP.get(&in_native).copied()
 }
 
 pub(crate) fn hook_get_frame_count() {
@@ -111,7 +107,6 @@ pub(crate) fn hook_get_frame_count() {
                 "Could not find translation for native: {}",
                 GET_FRAME_COUNT_NATIVE
             );
-
             return;
         }
     };
@@ -120,7 +115,6 @@ pub(crate) fn hook_get_frame_count() {
         Some(value) => value,
         None => {
             error!("Could not find native handler for native: {}", native);
-
             return;
         }
     };
@@ -129,14 +123,11 @@ pub(crate) fn hook_get_frame_count() {
         unsafe { GetFrameCount.initialize(std::mem::transmute(address), get_frame_count) }
     {
         error!("Error initializing GetFrameCount hook: {}", error);
-
         return;
     }
 
     if let Err(error) = unsafe { GetFrameCount.enable() } {
         error!("Error enabling GetFrameCount hook: {}", error);
-
-        return;
     }
 }
 
@@ -155,7 +146,6 @@ fn on_tick() {
     let script_fiber = SCRIPT_FIBER.get_or_init(|| {
         has_initialized = true;
 
-        // Create fiber for script function
         let func: LPFIBER_START_ROUTINE = Some(script_function);
 
         Mutex::new(FiberWrapper {
@@ -179,7 +169,6 @@ unsafe extern "system" fn script_function(_: LPVOID) {
         Some(value) => value(),
         None => {
             error!("It is required to provide a script callback!");
-
             return;
         }
     }
@@ -202,14 +191,12 @@ pub(crate) unsafe fn script_wait(time: u32) {
 
     if let Some(value) = main_fiber {
         let main_fiber_value = *value.lock().unwrap();
-
         SwitchToFiber(main_fiber_value.pointer);
     }
 }
 
 fn get_frame_count(context: *mut c_void) -> *mut c_void {
     on_tick();
-
     context
 }
 
@@ -244,7 +231,6 @@ pub(crate) fn invoke_call<R: Copy>(native_handler: *mut c_void) -> R {
     unsafe { *(data as *mut R) }
 }
 
-// TODO: Implement this in Rust
 cpp! {{
 
 #include <unordered_map>
@@ -421,74 +407,6 @@ struct NativeRegistrationNew {
     }
 };
 
-
-enum eThreadState {
-    ThreadStateIdle = 0x0,
-    ThreadStateRunning = 0x1,
-    ThreadStateKilled = 0x2,
-    ThreadState3 = 0x3,
-    ThreadState4 = 0x4,
-};
-
-struct scrThreadContext {
-    int ThreadID;
-    int ScriptHash;
-    eThreadState State;
-    int _IP;
-    int FrameSP;
-    int _SPP;
-    float TimerA;
-    float TimerB;
-    int TimerC;
-    int _mUnk1;
-    int _mUnk2;
-    int _f2C;
-    int _f30;
-    int _f34;
-    int _f38;
-    int _f3C;
-    int _f40;
-    int _f44;
-    int _f48;
-    int _f4C;
-    int _f50;
-    int pad1;
-    int pad2;
-    int pad3;
-    int _set1;
-    int pad[17];
-};
-
-struct scrThread {
-    void *vTable;
-    scrThreadContext m_ctx;
-    void *m_pStack;
-    void *pad;
-    void *pad2;
-    const char *m_pszExitMessage;
-};
-
-struct ScriptThread : scrThread {
-    const char Name[64];
-    void *m_pScriptHandler;
-    const char gta_pad2[40];
-    const char flag1;
-    const char m_networkFlag;
-    bool bool1;
-    bool bool2;
-    bool bool3;
-    bool bool4;
-    bool bool5;
-    bool bool6;
-    bool bool7;
-    bool bool8;
-    bool bool9;
-    bool bool10;
-    bool bool11;
-    bool bool12;
-    const char gta_pad3[10];
-};
-
 static NativeManagerContext _context;
 static uint64_t _hash;
 void(*ScrNativeCallContext::SetVectorResults)(ScrNativeCallContext*) = nullptr;
@@ -510,6 +428,7 @@ uint64_t *nativeCall(NativeHandler function) {
             function(&_context);
             ScrNativeCallContext::SetVectorResults(&_context);
         } __except (exceptionAddress = (GetExceptionInformation())->ExceptionRecord->ExceptionAddress, EXCEPTION_EXECUTE_HANDLER) {
+            // Native call failed at the exception address captured above
         }
     }
 

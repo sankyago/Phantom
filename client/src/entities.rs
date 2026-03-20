@@ -1,7 +1,7 @@
 use crate::utility::StreamedModel;
+use glam::Vec3;
 use hook::natives::{entity, misc, vehicle};
 use hook::types::NativeVector3;
-use shared::bevy::math::Vec3;
 use shared::{EntityModel, EntityTransform};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -32,7 +32,6 @@ pub fn get_entity_transform(entity_id: i32) -> EntityTransform {
 
 pub fn get_entity_model(entity_id: i32) -> EntityModel {
     let model = entity::get_entity_model(entity_id);
-
     EntityModel { model }
 }
 

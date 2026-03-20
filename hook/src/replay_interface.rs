@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use crate::POINTERS;
 
 #[repr(C)]
@@ -17,18 +19,6 @@ pub struct CObjectInterface {
     pub max_objects: i32,
     pub pad_0164: [u8; 4],
     pub current_objects: i32,
-}
-
-impl CObjectInterface {
-    fn _get_object(&self, index: usize) -> *mut CObject {
-        if index < self.max_objects as usize {
-            unsafe {
-                return (*self.object_list).object_handles[index].object;
-            }
-        }
-
-        std::ptr::null_mut()
-    }
 }
 
 #[repr(C)]
@@ -64,7 +54,6 @@ impl CPedInterface {
                 return (*self.ped_list).ped_handles[index].ped;
             }
         }
-
         std::ptr::null_mut()
     }
 }
@@ -101,7 +90,6 @@ impl CVehicleInterface {
                 return (*self.vehicle_list).vehicle_handles[index].vehicle;
             }
         }
-
         std::ptr::null_mut()
     }
 }

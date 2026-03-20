@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use cpp::cpp;
 use winapi::Interface;
 
@@ -10,8 +12,6 @@ struct RendererData {
     device: Option<*mut winapi::um::d3d11::ID3D11Device>,
     context: Option<*mut winapi::um::d3d11::ID3D11DeviceContext>,
     present_callbacks: Vec<D3DCallback>,
-    // pre_resize_callbacks: Vec<D3DCallback>,
-    // post_resize_callbacks: Vec<D3DCallback>,
 }
 
 impl RendererData {
@@ -19,8 +19,6 @@ impl RendererData {
         device: None,
         context: None,
         present_callbacks: Vec::new(),
-        // pre_resize_callbacks: Vec::new(),
-        // post_resize_callbacks: Vec::new(),
     };
 }
 
@@ -100,18 +98,6 @@ pub fn register_present_callback(callback: D3DCallback) {
     };
 }
 
-// pub fn register_pre_resize_callback(callback: D3DCallback) {
-//     unsafe {
-//         RENDERER_DATA.pre_resize_callbacks.push(callback);
-//     };
-// }
-
-// pub fn register_post_resize_callback(callback: D3DCallback) {
-//     unsafe {
-//         RENDERER_DATA.post_resize_callbacks.push(callback);
-//     };
-// }
-
 pub(crate) fn present(swapchain: *mut winapi::shared::dxgi::IDXGISwapChain) {
     unsafe {
         let mut device: *mut std::ffi::c_void = std::ptr::null_mut();
@@ -135,22 +121,6 @@ pub(crate) fn present(swapchain: *mut winapi::shared::dxgi::IDXGISwapChain) {
         }
     }
 }
-
-// pub(crate) fn pre_resize() {
-//     unsafe {
-//         for callback in &RENDERER_DATA.pre_resize_callbacks {
-//             callback();
-//         }
-//     }
-// }
-
-// pub(crate) fn post_resize() {
-//     unsafe {
-//         for callback in &RENDERER_DATA.post_resize_callbacks {
-//             callback();
-//         }
-//     }
-// }
 
 cpp! {{
 

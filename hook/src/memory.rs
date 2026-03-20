@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use cpp::cpp;
 use std::ffi::{c_void, CString};
 

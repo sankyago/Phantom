@@ -19,23 +19,18 @@ jobs:
 
     steps:
     - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@nightly
       with:
-        toolchain: nightly
-        override: true
         components: rustfmt, clippy
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Build
       run: cargo build --verbose
 
     - name: Clippy check
-      uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
+      run: cargo clippy --all-features -- -D warnings
 
     - name: Style check
       run: cargo fmt -- --check

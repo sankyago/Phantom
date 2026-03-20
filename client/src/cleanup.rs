@@ -1,17 +1,6 @@
 use crate::{entities::EntityHandle, wrapped_natives::entities::delete_entity};
 use hook::natives::*;
 use log::{debug, error};
-use shared::bevy::prelude::*;
-
-pub struct CleanupPlugin;
-impl Plugin for CleanupPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(startup_system.exclusive_system())
-            .add_system(cleanup_tick_system.exclusive_system())
-            .add_system(cleanup_system.exclusive_system())
-            .add_system(hijack_frontend_menu.exclusive_system());
-    }
-}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum EntityCleanupType {
@@ -25,7 +14,7 @@ pub struct EntityCleanupData {
     last_run_at: std::time::SystemTime,
 }
 
-pub fn startup_system(world: &mut World) {
+pub fn startup_system(world: &mut hecs::World) {
     let player_ped_id = player::player_ped_id();
     entity::set_entity_coords_no_offset(player_ped_id, 412.4, -976.71, 29.43, false, false, false);
 
@@ -49,15 +38,15 @@ pub fn startup_system(world: &mut World) {
         misc::terminate_all_scripts_with_this_name(&gameplay_script_cstring);
     }
 
-    world.spawn().insert(EntityCleanupData {
+    world.spawn((EntityCleanupData {
         cleanup_type: EntityCleanupType::Ped,
         last_run_at: std::time::SystemTime::UNIX_EPOCH,
-    });
+    },));
 
-    world.spawn().insert(EntityCleanupData {
+    world.spawn((EntityCleanupData {
         cleanup_type: EntityCleanupType::Vehicle,
         last_run_at: std::time::SystemTime::UNIX_EPOCH,
-    });
+    },));
 }
 
 pub fn cleanup_tick_system() {
@@ -96,36 +85,38 @@ pub fn cleanup_tick_system() {
     pad::disable_control_action(0, 243, true); // INPUT_ENTER_CHEAT_CODE
 }
 
-pub fn cleanup_system(world: &mut World) {
-    let mut existing_entities = Vec::<EntityHandle>::new();
-
-    {
-        let mut entities = world.query::<&EntityHandle>();
-        for entity in entities.iter(world) {
-            existing_entities.push(entity.clone());
-        }
-    }
-
-    let mut entity_cleanup_data = world.query::<&mut EntityCleanupData>();
+pub fn cleanup_system(world: &mut hecs::World) {
+    let existing_entities: Vec<EntityHandle> = world
+        .query::<&EntityHandle>()
+        .iter()
+        .map(|(_, handle)| *handle)
+        .collect();
 
     let now = std::time::SystemTime::now();
 
-    for mut data in entity_cleanup_data.iter_mut(world) {
+    let cleanup_entries: Vec<(hecs::Entity, EntityCleanupData)> = world
+        .query::<&EntityCleanupData>()
+        .iter()
+        .map(|(id, data)| (id, *data))
+        .collect();
+
+    for (entity_id, mut data) in cleanup_entries {
         match now.duration_since(data.last_run_at) {
             Ok(duration) => {
                 if duration.as_millis() < 500 {
-                    return;
+                    continue;
                 }
-
                 data.last_run_at = now;
+                if let Ok(mut entry) = world.get::<&mut EntityCleanupData>(entity_id) {
+                    *entry = data;
+                }
             }
             Err(error) => {
                 error!(
                     "Error while running entity cleanup for type {:?}: {}",
                     data.cleanup_type, error
                 );
-
-                return;
+                continue;
             }
         }
 
@@ -136,23 +127,18 @@ pub fn cleanup_system(world: &mut World) {
 
         let mut deleted_entities = 0;
 
-        for mut entity in entities {
-            // Don't try to delete the own player ped or non-existing entities
-            if player::player_ped_id() == entity || entity::does_entity_exist(entity) == false {
+        for mut game_entity in entities {
+            if player::player_ped_id() == game_entity || !entity::does_entity_exist(game_entity) {
                 continue;
             }
 
-            let should_entity_exist = (&mut existing_entities)
-                .iter()
-                .find(|x| x.handle == entity)
-                .is_some();
+            let should_exist = existing_entities.iter().any(|x| x.handle == game_entity);
 
-            if should_entity_exist {
+            if should_exist {
                 continue;
             }
 
-            delete_entity(&mut entity);
-
+            delete_entity(&mut game_entity);
             deleted_entities += 1;
         }
 
@@ -165,7 +151,7 @@ pub fn cleanup_system(world: &mut World) {
     }
 }
 
-pub fn hijack_frontend_menu(_world: &mut World) {
+pub fn hijack_frontend_menu() {
     pad::disable_control_action(0, 199, true);
     pad::disable_control_action(0, 200, true);
 
@@ -180,7 +166,7 @@ pub fn hijack_frontend_menu(_world: &mut World) {
     }
 }
 
-static GAMEPLAY_SCRIPTS: [&'static str; 748] = [
+static GAMEPLAY_SCRIPTS: [&str; 748] = [
     "abigail1",
     "abigail2",
     "achievement_controller",
