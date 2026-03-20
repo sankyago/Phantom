@@ -13,8 +13,6 @@ fern = "0.6"
 glam = "0.29"
 hecs = "0.10"
 hook = { path = "../hook" }
-imgui = { git = "https://github.com/Cryma/imgui-rs" }
-imgui-sys = { git = "https://github.com/Cryma/imgui-rs" }
 log = "0.4"
 serde_json = "1.0"
 shared = { path = "../shared" }

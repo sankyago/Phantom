@@ -1,13 +1,12 @@
 #![deny(unsafe_code)]
 
-use log::{debug, info, warn};
+use log::{debug, info};
 use std::sync::LazyLock;
 use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
 mod cleanup;
 mod entities;
-#[allow(unsafe_code)]
-mod imgui;
+mod menu;
 pub mod network;
 mod thread_jumper;
 mod ui;
@@ -38,14 +37,12 @@ fn entrypoint() {
 
     hook::initialize(script_callback);
 
-    hook::register_present_callback(imgui::d3d11_present);
-    hook::register_window_proc_callback(imgui::wndproc);
-
     info!("Successfully started Phantom Multiplayer");
 }
 
 fn script_callback() {
     let mut world = hecs::World::new();
+    let mut game_menu = menu::Menu::new();
 
     // Startup systems (run once)
     cleanup::startup_system(&mut world);
@@ -60,6 +57,9 @@ fn script_callback() {
         cleanup::cleanup_tick_system();
         cleanup::cleanup_system(&mut world);
         cleanup::hijack_frontend_menu();
+
+        // Menu (F1 to toggle)
+        game_menu.update(&mut world);
 
         // Send player position to server each tick
         if net.is_connected() {
@@ -81,7 +81,6 @@ fn script_callback() {
         }
 
         ui::draw_text_entries(&mut world);
-        imgui::handle_cursor();
         thread_jumper::run_native_callbacks(&mut world);
         hook::script_wait(0);
     }
@@ -101,7 +100,6 @@ fn handle_server_message(msg: &shared::ServerMessage) {
             info!("Player {} disconnected", player_id);
         }
         ServerMessage::PlayerUpdate { player_id, transform } => {
-            // TODO: Spawn/move remote player ped at transform.position
             debug!(
                 "Player {} at ({:.1}, {:.1}, {:.1})",
                 player_id, transform.position.x, transform.position.y, transform.position.z
@@ -109,7 +107,7 @@ fn handle_server_message(msg: &shared::ServerMessage) {
         }
         ServerMessage::EntityUpdate { entity_id, transform, model } => {
             debug!("Entity {} (model {}) updated", entity_id, model);
-            let _ = transform; // TODO: sync remote entities
+            let _ = transform;
         }
         ServerMessage::ChatMessage { player_id, message } => {
             info!("[Chat] Player {}: {}", player_id, message);
