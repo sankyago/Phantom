@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{Mutex, broadcast};
 use tokio_tungstenite::tungstenite::Message;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, PlayerState>>>;
 
@@ -15,7 +16,7 @@ struct PlayerState {
     name: String,
 }
 
-static mut NEXT_PLAYER_ID: u32 = 1;
+static NEXT_PLAYER_ID: AtomicU32 = AtomicU32::new(1);
 
 #[tokio::main]
 async fn main() {
@@ -55,11 +56,7 @@ async fn handle_connection(
 
     info!("New WebSocket connection from {}", addr);
 
-    let player_id = unsafe {
-        let id = NEXT_PLAYER_ID;
-        NEXT_PLAYER_ID += 1;
-        id
-    };
+    let player_id = NEXT_PLAYER_ID.fetch_add(1, Ordering::Relaxed);
 
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
