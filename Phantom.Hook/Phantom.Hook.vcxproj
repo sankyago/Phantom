@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{A1B2C3D4-1111-1111-1111-000000000001}</ProjectGuid>
+    <RootNamespace>PhantomHook</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\detours\include;$(SolutionDir)third_party\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\detours\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\detours\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="include\hook\memory.h" />
+    <ClInclude Include="include\hook\pattern_scan.h" />
+    <ClInclude Include="include\hook\vmt_hook.h" />
+    <ClInclude Include="include\hook\detours_hook.h" />
+    <ClInclude Include="include\hook\d3d11_hook.h" />
+    <ClInclude Include="include\hook\input.h" />
+    <ClInclude Include="include\hook\natives.h" />
+    <ClInclude Include="include\hook\fiber.h" />
+    <ClInclude Include="include\hook\scoped_handle.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\memory.cpp" />
+    <ClCompile Include="src\pattern_scan.cpp" />
+    <ClCompile Include="src\vmt_hook.cpp" />
+    <ClCompile Include="src\detours_hook.cpp" />
+    <ClCompile Include="src\d3d11_hook.cpp" />
+    <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\natives.cpp" />
+    <ClCompile Include="src\fiber.cpp" />
+    <ClCompile Include="src\scoped_handle.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phantom.Shared\Phantom.Shared.vcxproj">
+      <Project>{A1B2C3D4-4444-4444-4444-000000000004}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

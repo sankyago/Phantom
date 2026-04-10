@@ -1,2 +1,42 @@
+# Rust
 /target
 *.log
+
+# C++ build artifacts
+*.obj
+*.o
+*.lib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.iobj
+*.ipdb
+*.res
+*.pch
+*.idb
+
+# Build directories
+x64/
+Debug/
+Release/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+ipch/
+
+# Third-party binaries
+third_party/*/lib/
+third_party/*/bin/
+
+# FlatBuffers generated headers
+Phantom.Shared/generated/*.h

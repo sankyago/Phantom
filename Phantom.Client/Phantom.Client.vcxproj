@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{A1B2C3D4-2222-2222-2222-000000000002}</ProjectGuid>
+    <RootNamespace>PhantomClient</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <TargetName>client</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Hook\include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\ultralight\include;$(SolutionDir)third_party\spdlog\include;$(SolutionDir)third_party\ixwebsocket\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;detours.lib;Ultralight.lib;UltralightCore.lib;WebCore.lib;AppCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\detours\lib\x64;$(SolutionDir)third_party\ultralight\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="include\client\game_state.h" />
+    <ClInclude Include="include\client\entity_manager.h" />
+    <ClInclude Include="include\client\script_thread.h" />
+    <ClInclude Include="include\client\overlay.h" />
+    <ClInclude Include="include\client\network_client.h" />
+    <ClInclude Include="include\client\dll_main.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\game_state.cpp" />
+    <ClCompile Include="src\entity_manager.cpp" />
+    <ClCompile Include="src\script_thread.cpp" />
+    <ClCompile Include="src\overlay.cpp" />
+    <ClCompile Include="src\network_client.cpp" />
+    <ClCompile Include="src\dll_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phantom.Hook\Phantom.Hook.vcxproj">
+      <Project>{A1B2C3D4-1111-1111-1111-000000000001}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Phantom.Shared\Phantom.Shared.vcxproj">
+      <Project>{A1B2C3D4-4444-4444-4444-000000000004}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
