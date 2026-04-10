@@ -45,7 +45,12 @@ std::expected<void, NetworkError> NetworkClient::connect(const std::string& url)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     if (!connected_.load())
+    {
+        should_stop_.store(true);
+        if (network_thread_.joinable())
+            network_thread_.join();
         return std::unexpected(NetworkError::ConnectionFailed);
+    }
 
     return {};
 }
@@ -53,6 +58,26 @@ std::expected<void, NetworkError> NetworkClient::connect(const std::string& url)
 void NetworkClient::disconnect()
 {
     should_stop_.store(true);
+
+    // Close WinHTTP handles to unblock any pending WinHttpWebSocketReceive call
+    {
+        std::lock_guard lock(send_mutex_);
+        if (ws_handle_)
+        {
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(ws_handle_));
+            ws_handle_ = nullptr;
+        }
+        if (connection_handle_)
+        {
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(connection_handle_));
+            connection_handle_ = nullptr;
+        }
+        if (session_handle_)
+        {
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(session_handle_));
+            session_handle_ = nullptr;
+        }
+    }
 
     if (network_thread_.joinable())
         network_thread_.join();
@@ -127,9 +152,12 @@ void NetworkClient::network_thread_func(const std::string& /*url*/)
         return;
     }
 
+    // Store handles as members so disconnect() can close them to unblock the receive loop
     {
         std::lock_guard lock(send_mutex_);
         ws_handle_ = websocket;
+        session_handle_ = session;
+        connection_handle_ = connection;
     }
 
     connected_.store(true);
@@ -163,15 +191,27 @@ void NetworkClient::network_thread_func(const std::string& /*url*/)
         // TODO: FlatBuffers deserialization of buffer[0..bytes_read]
     }
 
+    // Clean up handles that disconnect() hasn't already closed
     {
         std::lock_guard lock(send_mutex_);
-        ws_handle_ = nullptr;
+        if (ws_handle_)
+        {
+            ::WinHttpWebSocketClose(static_cast<HINTERNET>(ws_handle_),
+                                    WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0);
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(ws_handle_));
+            ws_handle_ = nullptr;
+        }
+        if (connection_handle_)
+        {
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(connection_handle_));
+            connection_handle_ = nullptr;
+        }
+        if (session_handle_)
+        {
+            ::WinHttpCloseHandle(static_cast<HINTERNET>(session_handle_));
+            session_handle_ = nullptr;
+        }
     }
-
-    ::WinHttpWebSocketClose(websocket, WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0);
-    ::WinHttpCloseHandle(websocket);
-    ::WinHttpCloseHandle(connection);
-    ::WinHttpCloseHandle(session);
 
     connected_.store(false);
 }

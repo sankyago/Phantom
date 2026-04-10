@@ -6,7 +6,7 @@ namespace phantom::hook {
 // Static members
 // ---------------------------------------------------------------------------
 
-InputHook* InputHook::instance_ = nullptr;
+std::atomic<InputHook*> InputHook::instance_ = nullptr;
 
 // ---------------------------------------------------------------------------
 // InputHook
@@ -21,8 +21,8 @@ InputHook::~InputHook() {
             hwnd_, GWLP_WNDPROC,
             reinterpret_cast<LONG_PTR>(original_wndproc_));
     }
-    if (instance_ == this) {
-        instance_ = nullptr;
+    if (instance_.load(std::memory_order_acquire) == this) {
+        instance_.store(nullptr, std::memory_order_release);
     }
 }
 
@@ -46,7 +46,7 @@ InputHook::create(HWND hwnd) {
     }
 
     auto self = std::unique_ptr<InputHook>(new InputHook(hwnd, original));
-    instance_ = self.get();
+    instance_.store(self.get(), std::memory_order_release);
 
     return self;
 }
@@ -66,14 +66,15 @@ void InputHook::add_callback(InputCallback callback) {
 LRESULT CALLBACK InputHook::hooked_wndproc(
     HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
-    if (instance_) {
-        for (auto& cb : instance_->callbacks_) {
+    auto* self = instance_.load(std::memory_order_acquire);
+    if (self) {
+        for (auto& cb : self->callbacks_) {
             if (cb(hwnd, msg, wparam, lparam)) {
                 return TRUE;
             }
         }
         return ::CallWindowProcW(
-            instance_->original_wndproc_, hwnd, msg, wparam, lparam);
+            self->original_wndproc_, hwnd, msg, wparam, lparam);
     }
 
     return ::DefWindowProcW(hwnd, msg, wparam, lparam);

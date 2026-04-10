@@ -1,7 +1,8 @@
 #pragma once
 
-#include "hook/vmt_hook.h"
+#include "hook/detours_hook.h"
 
+#include <atomic>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <expected>
@@ -19,6 +20,8 @@ namespace phantom::hook {
 using PresentCallback =
     std::function<void(IDXGISwapChain*, ID3D11Device*, ID3D11DeviceContext*)>;
 
+using PresentFn = HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT);
+
 // ---------------------------------------------------------------------------
 // D3D11Hook
 // ---------------------------------------------------------------------------
@@ -28,7 +31,7 @@ public:
     [[nodiscard]] static std::expected<std::unique_ptr<D3D11Hook>, HookError>
     create();
 
-    ~D3D11Hook() = default;
+    ~D3D11Hook();
 
     D3D11Hook(const D3D11Hook&) = delete;
     D3D11Hook& operator=(const D3D11Hook&) = delete;
@@ -44,12 +47,12 @@ private:
     static HRESULT STDMETHODCALLTYPE hooked_present(
         IDXGISwapChain* swap_chain, UINT sync_interval, UINT flags);
 
-    std::optional<VMTHook> present_hook_;
+    std::optional<DetoursHook<PresentFn>> present_hook_;
     ID3D11Device* device_ = nullptr;
     ID3D11DeviceContext* context_ = nullptr;
     std::vector<PresentCallback> present_callbacks_;
 
-    static D3D11Hook* instance_;
+    static std::atomic<D3D11Hook*> instance_;
 };
 
 } // namespace phantom::hook

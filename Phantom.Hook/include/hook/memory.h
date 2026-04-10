@@ -56,6 +56,9 @@ public:
     /// RIP-relative resolution: reads an int32_t at the current address and
     /// returns address + offset + 4.
     [[nodiscard]] MemoryHandle rip() const noexcept {
+        if (!valid()) {
+            return MemoryHandle{};
+        }
         auto offset = *reinterpret_cast<const int32_t*>(address_);
         return MemoryHandle(address_ + static_cast<uintptr_t>(offset) + 4);
     }

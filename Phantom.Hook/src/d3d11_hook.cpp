@@ -9,7 +9,7 @@ namespace phantom::hook {
 // Static members
 // ---------------------------------------------------------------------------
 
-D3D11Hook* D3D11Hook::instance_ = nullptr;
+std::atomic<D3D11Hook*> D3D11Hook::instance_ = nullptr;
 
 // ---------------------------------------------------------------------------
 // D3D11Hook::create
@@ -51,14 +51,18 @@ std::expected<std::unique_ptr<D3D11Hook>, HookError> D3D11Hook::create() {
         return std::unexpected(HookError::NullPointer);
     }
 
-    // Hook Present — vtable index 8.
-    auto hook_result = VMTHook::create(
-        tmp_swap, 8, reinterpret_cast<void*>(&hooked_present));
+    // Read the Present function address from vtable index 8.
+    auto* vtable = *reinterpret_cast<void***>(tmp_swap);
+    auto present_addr = reinterpret_cast<PresentFn>(vtable[8]);
 
-    // Release temporary objects — we only needed the vtable layout.
+    // Release temporary objects — we only needed the Present address.
     tmp_context->Release();
     tmp_device->Release();
     tmp_swap->Release();
+
+    // Use DetoursHook to inline-hook the Present function globally.
+    // This works because all swap chains share the same Present implementation.
+    auto hook_result = DetoursHook<PresentFn>::create(present_addr, &hooked_present);
 
     if (!hook_result) {
         return std::unexpected(hook_result.error());
@@ -66,9 +70,29 @@ std::expected<std::unique_ptr<D3D11Hook>, HookError> D3D11Hook::create() {
 
     auto self = std::unique_ptr<D3D11Hook>(new D3D11Hook());
     self->present_hook_.emplace(std::move(*hook_result));
-    instance_ = self.get();
+    instance_.store(self.get(), std::memory_order_release);
 
     return self;
+}
+
+// ---------------------------------------------------------------------------
+// D3D11Hook::~D3D11Hook
+// ---------------------------------------------------------------------------
+
+D3D11Hook::~D3D11Hook() {
+    // Clear the singleton pointer before tearing down, so hooked_present
+    // will early-return if called during destruction.
+    instance_.store(nullptr, std::memory_order_release);
+
+    // Release COM references obtained via GetDevice / GetImmediateContext.
+    if (context_) {
+        context_->Release();
+        context_ = nullptr;
+    }
+    if (device_) {
+        device_->Release();
+        device_ = nullptr;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -86,30 +110,27 @@ void D3D11Hook::add_present_callback(PresentCallback callback) {
 HRESULT STDMETHODCALLTYPE D3D11Hook::hooked_present(
     IDXGISwapChain* swap_chain, UINT sync_interval, UINT flags) {
 
-    if (!instance_) {
+    auto* self = instance_.load(std::memory_order_acquire);
+    if (!self) {
         return E_FAIL;
     }
 
     // On first call, capture the real device and context from the swap-chain.
-    if (!instance_->device_) {
+    if (!self->device_) {
         swap_chain->GetDevice(__uuidof(ID3D11Device),
-                              reinterpret_cast<void**>(&instance_->device_));
-        if (instance_->device_) {
-            instance_->device_->GetImmediateContext(&instance_->context_);
+                              reinterpret_cast<void**>(&self->device_));
+        if (self->device_) {
+            self->device_->GetImmediateContext(&self->context_);
         }
     }
 
     // Invoke all registered present callbacks.
-    for (auto& cb : instance_->present_callbacks_) {
-        cb(swap_chain, instance_->device_, instance_->context_);
+    for (auto& cb : self->present_callbacks_) {
+        cb(swap_chain, self->device_, self->context_);
     }
 
-    // Call the original Present.
-    using PresentFn = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
-    auto original = reinterpret_cast<PresentFn>(
-        instance_->present_hook_->original());
-
-    return original(swap_chain, sync_interval, flags);
+    // Call the original Present via the Detours trampoline.
+    return self->present_hook_->original()(swap_chain, sync_interval, flags);
 }
 
 } // namespace phantom::hook

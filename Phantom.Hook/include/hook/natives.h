@@ -38,6 +38,8 @@ struct NativeContext {
     template <typename T>
     void push(T value) {
         static_assert(sizeof(T) <= sizeof(uint64_t));
+        if (arg_count >= MAX_ARGS)
+            return;
         *reinterpret_cast<T*>(&args[arg_count]) = value;
         ++arg_count;
     }

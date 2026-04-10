@@ -2,6 +2,7 @@
 #include "launcher/process_finder.h"
 #include "launcher/registry_helper.h"
 #include "shared/constants.h"
+#include "shared/scoped_handle.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -15,7 +16,7 @@ namespace
 {
 
 constexpr std::string_view GTA_EXECUTABLE = "GTA5.exe";
-constexpr std::string_view CLIENT_DLL = "Phantom.Client.dll";
+constexpr std::string_view CLIENT_DLL = "client.dll";
 
 bool g_verbose = false;
 
@@ -86,7 +87,8 @@ int do_launch()
         return 1;
     }
 
-    ::CloseHandle(pi.hThread);
+    phantom::ScopedHandle process_handle(pi.hProcess);
+    phantom::ScopedHandle thread_handle(pi.hThread);
 
     log_verbose("Waiting for process to initialize...");
     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -96,7 +98,6 @@ int do_launch()
     log_verbose(std::string("DLL path: ") + dll_path.string());
 
     auto inject_result = Injector::inject(pi.dwProcessId, dll_path);
-    ::CloseHandle(pi.hProcess);
 
     if (!inject_result.has_value())
     {

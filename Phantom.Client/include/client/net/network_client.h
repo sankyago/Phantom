@@ -50,5 +50,7 @@ class NetworkClient
     std::queue<NetworkEvent> event_queue_;
     std::mutex send_mutex_;
     void* ws_handle_ = nullptr;
+    void* session_handle_ = nullptr;
+    void* connection_handle_ = nullptr;
 };
 } // namespace phantom::client

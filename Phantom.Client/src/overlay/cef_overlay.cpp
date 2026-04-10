@@ -1,7 +1,19 @@
 #include "client/overlay/cef_overlay.h"
+#include "client/overlay/i_overlay.h"
 
 namespace phantom::client
 {
+
+const char* overlay_error_to_string(OverlayError error)
+{
+    switch (error)
+    {
+    case OverlayError::InitFailed: return "Overlay initialization failed";
+    case OverlayError::RenderFailed: return "Overlay render failed";
+    case OverlayError::DeviceNotAvailable: return "D3D11 device not available";
+    }
+    return "Unknown overlay error";
+}
 
 CefOverlay::CefOverlay() = default;
 CefOverlay::~CefOverlay() { shutdown(); }

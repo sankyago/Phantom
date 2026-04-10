@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Hook\include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Hook\include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\detours\include;$(SolutionDir)third_party\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;detours.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>

@@ -2,6 +2,7 @@
 
 #include "hook/vmt_hook.h"
 
+#include <atomic>
 #include <expected>
 #include <functional>
 #include <memory>
@@ -24,7 +25,7 @@ public:
     [[nodiscard]] static std::expected<std::unique_ptr<FiberManager>, HookError>
     create();
 
-    ~FiberManager() = default;
+    ~FiberManager();
 
     FiberManager(const FiberManager&) = delete;
     FiberManager& operator=(const FiberManager&) = delete;
@@ -47,7 +48,7 @@ private:
     LPVOID main_fiber_ = nullptr;
     std::vector<ScriptFiber> scripts_;
 
-    static FiberManager* instance_;
+    static std::atomic<FiberManager*> instance_;
 };
 
 } // namespace phantom::hook

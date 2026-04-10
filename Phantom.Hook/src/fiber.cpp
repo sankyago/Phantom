@@ -6,7 +6,29 @@ namespace phantom::hook {
 // Static members
 // ---------------------------------------------------------------------------
 
-FiberManager* FiberManager::instance_ = nullptr;
+std::atomic<FiberManager*> FiberManager::instance_ = nullptr;
+
+// ---------------------------------------------------------------------------
+// FiberManager::create
+// ---------------------------------------------------------------------------
+
+FiberManager::~FiberManager() {
+    instance_.store(nullptr, std::memory_order_release);
+
+    // Delete all script fibers.
+    for (auto& sf : scripts_) {
+        if (sf.fiber) {
+            ::DeleteFiber(sf.fiber);
+            sf.fiber = nullptr;
+        }
+    }
+
+    // Convert the main fiber back to a regular thread.
+    if (main_fiber_) {
+        ::ConvertFiberToThread();
+        main_fiber_ = nullptr;
+    }
+}
 
 // ---------------------------------------------------------------------------
 // FiberManager::create
@@ -26,7 +48,7 @@ std::expected<std::unique_ptr<FiberManager>, HookError> FiberManager::create() {
         return std::unexpected(HookError::NullPointer);
     }
 
-    instance_ = self.get();
+    instance_.store(self.get(), std::memory_order_release);
     return self;
 }
 
@@ -62,8 +84,9 @@ void FiberManager::tick() {
 // ---------------------------------------------------------------------------
 
 void FiberManager::yield() {
-    if (instance_ && instance_->main_fiber_) {
-        ::SwitchToFiber(instance_->main_fiber_);
+    auto* self = instance_.load(std::memory_order_acquire);
+    if (self && self->main_fiber_) {
+        ::SwitchToFiber(self->main_fiber_);
     }
 }
 
@@ -81,8 +104,9 @@ void CALLBACK FiberManager::fiber_entry(LPVOID param) {
     sf->finished = true;
 
     // Switch back to the main fiber — this fiber is done.
-    if (instance_ && instance_->main_fiber_) {
-        ::SwitchToFiber(instance_->main_fiber_);
+    auto* mgr = instance_.load(std::memory_order_acquire);
+    if (mgr && mgr->main_fiber_) {
+        ::SwitchToFiber(mgr->main_fiber_);
     }
 }
 

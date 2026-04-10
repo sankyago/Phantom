@@ -7,6 +7,7 @@
 #include "client/game/script_thread.h"
 #include "client/net/network_client.h"
 #include "client/overlay/cef_overlay.h"
+#include "client/overlay/i_overlay.h"
 
 #include "hook/d3d11_hook.h"
 #include "hook/fiber.h"
@@ -22,7 +23,6 @@
 #include <spdlog/sinks/msvc_sink.h>
 
 #include <memory>
-#include <print>
 #include <thread>
 #include <Windows.h>
 
@@ -37,7 +37,7 @@ HMODULE g_module = nullptr;
 std::unique_ptr<phantom::hook::D3D11Hook>       g_d3d11_hook;
 std::unique_ptr<phantom::hook::InputHook>        g_input_hook;
 std::unique_ptr<phantom::hook::FiberManager>     g_fiber_manager;
-std::unique_ptr<phantom::client::CefOverlay> g_overlay;
+std::unique_ptr<phantom::client::IOverlay> g_overlay;
 std::unique_ptr<phantom::client::NetworkClient>  g_network_client;
 std::unique_ptr<phantom::client::GameState>      g_game_state;
 std::unique_ptr<phantom::client::EntityManager>  g_entity_manager;
@@ -97,7 +97,7 @@ void init_thread() {
     g_input_hook = std::move(*input_result);
     spdlog::info("InputHook created successfully");
 
-    // 4. Ultralight overlay
+    // 4. CEF overlay
     g_overlay = std::make_unique<phantom::client::CefOverlay>();
     auto overlay_result = g_overlay->init(game_window, g_d3d11_hook->device());
     if (!overlay_result) {
@@ -172,9 +172,11 @@ BOOL APIENTRY DllMain(HMODULE hmodule, DWORD reason, LPVOID /*reserved*/) {
     case DLL_PROCESS_ATTACH:
         g_module = hmodule;
         DisableThreadLibraryCalls(hmodule);
-        CreateThread(nullptr, 0,
+        if (HANDLE h = CreateThread(nullptr, 0,
                      [](LPVOID) -> DWORD { init_thread(); return 0; },
-                     nullptr, 0, nullptr);
+                     nullptr, 0, nullptr)) {
+            ::CloseHandle(h);
+        }
         break;
 
     case DLL_PROCESS_DETACH:

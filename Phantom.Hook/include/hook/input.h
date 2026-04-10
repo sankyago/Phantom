@@ -2,6 +2,7 @@
 
 #include "hook/vmt_hook.h"
 
+#include <atomic>
 #include <expected>
 #include <functional>
 #include <memory>
@@ -41,7 +42,7 @@ private:
     WNDPROC original_wndproc_ = nullptr;
     std::vector<InputCallback> callbacks_;
 
-    static InputHook* instance_;
+    static std::atomic<InputHook*> instance_;
 };
 
 } // namespace phantom::hook
