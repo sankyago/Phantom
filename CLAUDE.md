@@ -12,21 +12,10 @@ Phantom is a GTA V multiplayer framework built for educational purposes. The C++
 
 ```
 Phantom/
-├── Phantom.sln                  # Visual Studio 2022 solution (7 projects)
-├── Directory.Build.props        # Shared MSBuild properties (C++26, W4, no exceptions)
 ├── Phantom.Hook/                # Static library (.lib) — core hooking engine
 ├── Phantom.Client/              # Dynamic library (client.dll) — injected into GTA V
 ├── Phantom.Launcher/            # Executable — DLL injector
 ├── Phantom.Shared/              # Static library — shared types, FlatBuffers schema
-├── Phantom.Hook.Tests/          # Google Test suite for Hook
-├── Phantom.Client.Tests/        # Google Test suite for Client
-├── Phantom.Launcher.Tests/      # Google Test suite for Launcher
-├── server/                      # Rust async server (Tokio + WebSockets)
-├── third_party/                 # Vendored: Detours, Ultralight, spdlog, googletest,
-│                                #   flatbuffers, ixwebsocket
-├── docs/superpowers/specs/      # Design specifications
-├── docs/superpowers/plans/      # Implementation plans
-└── tests/                       # Additional test infrastructure
 ```
 
 ### Phantom.Hook (Static Library, .lib)
