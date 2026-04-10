@@ -33,28 +33,28 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Hook\include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\ultralight\include;$(SolutionDir)third_party\spdlog\include;$(SolutionDir)third_party\ixwebsocket\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Phantom.Hook\include;$(SolutionDir)Phantom.Shared\include;$(SolutionDir)third_party\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;detours.lib;Ultralight.lib;UltralightCore.lib;WebCore.lib;AppCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)third_party\detours\lib\x64;$(SolutionDir)third_party\ultralight\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;detours.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)third_party\detours\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\client\game_state.h" />
-    <ClInclude Include="include\client\entity_manager.h" />
-    <ClInclude Include="include\client\script_thread.h" />
-    <ClInclude Include="include\client\overlay.h" />
-    <ClInclude Include="include\client\network_client.h" />
-    <ClInclude Include="include\client\dll_main.h" />
+    <ClInclude Include="include\client\game\game_state.h" />
+    <ClInclude Include="include\client\entities\entity_manager.h" />
+    <ClInclude Include="include\client\game\script_thread.h" />
+    <ClInclude Include="include\client\overlay\i_overlay.h" />
+    <ClInclude Include="include\client\overlay\cef_overlay.h" />
+    <ClInclude Include="include\client\net\network_client.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\game_state.cpp" />
-    <ClCompile Include="src\entity_manager.cpp" />
-    <ClCompile Include="src\script_thread.cpp" />
-    <ClCompile Include="src\overlay.cpp" />
-    <ClCompile Include="src\network_client.cpp" />
-    <ClCompile Include="src\dll_main.cpp" />
+    <ClCompile Include="src\game\game_state.cpp" />
+    <ClCompile Include="src\entities\entity_manager.cpp" />
+    <ClCompile Include="src\game\script_thread.cpp" />
+    <ClCompile Include="src\overlay\cef_overlay.cpp" />
+    <ClCompile Include="src\net\network_client.cpp" />
+    <ClCompile Include="src\dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantom.Hook\Phantom.Hook.vcxproj">

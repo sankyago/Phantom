@@ -50,7 +50,6 @@
     <ClInclude Include="include\hook\input.h" />
     <ClInclude Include="include\hook\natives.h" />
     <ClInclude Include="include\hook\fiber.h" />
-    <ClInclude Include="include\hook\scoped_handle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\memory.cpp" />
@@ -61,7 +60,7 @@
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\natives.cpp" />
     <ClCompile Include="src\fiber.cpp" />
-    <ClCompile Include="src\scoped_handle.cpp" />
+
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantom.Shared\Phantom.Shared.vcxproj">

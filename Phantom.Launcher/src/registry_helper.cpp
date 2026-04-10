@@ -82,7 +82,7 @@ std::expected<std::filesystem::path, RegistryError> RegistryHelper::find_gta_ins
     };
 
     // Try common registry locations for GTA V
-    static constexpr std::array<RegistryLocation, 4> locations = {{
+    static const std::array<RegistryLocation, 4> locations = {{
         {HKEY_LOCAL_MACHINE, R"(SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V)", "InstallFolder"},
         {HKEY_LOCAL_MACHINE, R"(SOFTWARE\Rockstar Games\Grand Theft Auto V)", "InstallFolder"},
         {HKEY_LOCAL_MACHINE, R"(SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{5EFC6C07-6B87-43FC-9524-F9E967241741})", "InstallLocation"},

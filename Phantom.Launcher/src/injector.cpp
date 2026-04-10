@@ -1,5 +1,5 @@
 #include "launcher/injector.h"
-#include "hook/scoped_handle.h"
+#include "shared/scoped_handle.h"
 
 namespace phantom::launcher
 {
@@ -37,7 +37,7 @@ std::expected<void, InjectionError> Injector::inject(DWORD process_id, const std
     SIZE_T path_size = dll_path_str.size() + 1; // include null terminator
 
     // 2. Open the target process
-    hook::ScopedHandle process{
+    ScopedHandle process{
         ::OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
                           PROCESS_VM_WRITE | PROCESS_VM_READ,
                       FALSE, process_id)};
@@ -68,7 +68,7 @@ std::expected<void, InjectionError> Injector::inject(DWORD process_id, const std
     FARPROC load_library_addr = ::GetProcAddress(::GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 
     // 6. Create a remote thread that calls LoadLibraryA with our DLL path
-    hook::ScopedHandle remote_thread{::CreateRemoteThread(
+    ScopedHandle remote_thread{::CreateRemoteThread(
         process.get(), nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(load_library_addr),
         remote_memory, 0, nullptr)};
     if (!remote_thread)

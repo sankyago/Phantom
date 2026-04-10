@@ -1,9 +1,10 @@
 #include "launcher/process_finder.h"
-#include "hook/scoped_handle.h"
+#include "shared/scoped_handle.h"
 
 #include <TlHelp32.h>
 #include <algorithm>
 #include <cctype>
+#include <cwctype>
 #include <string>
 
 namespace phantom::launcher
@@ -24,37 +25,38 @@ const char* find_error_to_string(FindError error)
 
 std::expected<DWORD, FindError> ProcessFinder::find_by_name(std::string_view process_name)
 {
-    hook::ScopedHandle snapshot{::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)};
+    ScopedHandle snapshot{::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)};
     if (!snapshot)
     {
         return std::unexpected(FindError::SnapshotFailed);
     }
 
-    PROCESSENTRY32 entry{};
-    entry.dwSize = sizeof(PROCESSENTRY32);
+    PROCESSENTRY32W entry{};
+    entry.dwSize = sizeof(PROCESSENTRY32W);
 
-    if (!::Process32First(snapshot.get(), &entry))
+    if (!::Process32FirstW(snapshot.get(), &entry))
     {
         return std::unexpected(FindError::ProcessNotFound);
     }
 
-    // Case-insensitive comparison helper
-    auto to_lower = [](std::string s) -> std::string {
+    // Convert target to wide string for comparison
+    auto to_lower_w = [](std::wstring s) -> std::wstring {
         std::transform(s.begin(), s.end(), s.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                       [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
         return s;
     };
 
-    std::string target = to_lower(std::string(process_name));
+    std::wstring target(process_name.begin(), process_name.end());
+    target = to_lower_w(target);
 
     do
     {
-        std::string current = to_lower(entry.szExeFile);
+        std::wstring current = to_lower_w(entry.szExeFile);
         if (current == target)
         {
             return entry.th32ProcessID;
         }
-    } while (::Process32Next(snapshot.get(), &entry));
+    } while (::Process32NextW(snapshot.get(), &entry));
 
     return std::unexpected(FindError::ProcessNotFound);
 }

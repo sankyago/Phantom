@@ -34,8 +34,7 @@ out/
 *.VC.opendb
 ipch/
 
-# Third-party binaries
-third_party/*/lib/
+# Third-party build artifacts
 third_party/*/bin/
 
 # FlatBuffers generated headers
