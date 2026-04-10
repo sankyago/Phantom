@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phantom Overlay</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #ffffff;
+    user-select: none;
+  }
+
+  #panel {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: rgba(15, 15, 25, 0.85);
+    border-radius: 10px;
+    padding: 16px 22px;
+    min-width: 200px;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+  }
+
+  #title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #8b5cf6;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .stat-label {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .stat-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+  <div id="panel">
+    <div id="title">Phantom</div>
+    <div class="stat-row">
+      <span class="stat-label">Players</span>
+      <span class="stat-value" id="players">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Entities</span>
+      <span class="stat-value" id="entities">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Ping</span>
+      <span class="stat-value" id="ping">0 ms</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">FPS</span>
+      <span class="stat-value" id="fps">0</span>
+    </div>
+  </div>
+  <script>
+    function updateStats(players, entities, ping, fps) {
+      document.getElementById('players').textContent  = players;
+      document.getElementById('entities').textContent = entities;
+      document.getElementById('ping').textContent     = ping + ' ms';
+      document.getElementById('fps').textContent      = fps;
+    }
+  </script>
+</body>
+</html>
