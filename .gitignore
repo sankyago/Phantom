@@ -40,3 +40,4 @@ third_party/*/bin/
 
 # FlatBuffers generated headers
 Phantom.Shared/generated/*.h
+server/target/
