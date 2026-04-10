@@ -1,6 +1,6 @@
 #include "launcher/injector.h"
 #include "launcher/process_finder.h"
-#include "launcher/registry_helper.h"
+#include "launcher/registry_storage.h"
 #include "shared/constants.h"
 #include "shared/scoped_handle.h"
 
@@ -55,14 +55,18 @@ int do_launch()
     std::cout << "Phantom Launcher v" << phantom::PHANTOM_VERSION << "\n";
     std::cout << "Finding GTA V installation...\n";
 
-    auto gta_path_result = RegistryHelper::find_gta_install_path();
-    if (!gta_path_result.has_value())
+    auto gta_path = RegistryStorage::get(
+        HKEY_LOCAL_MACHINE,
+        R"(SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V)",
+        "InstallFolder");
+
+    if (!gta_path.has_value())
     {
-        std::cerr << "Error: " << registry_error_to_string(gta_path_result.error()) << "\n";
+        std::cerr << "Error: " << registry_error_to_string(gta_path.error()) << "\n";
         return 1;
     }
 
-    std::filesystem::path gta_dir = gta_path_result.value();
+    std::filesystem::path gta_dir = gta_path.value();
     std::filesystem::path gta_exe = gta_dir / GTA_EXECUTABLE;
 
     log_verbose(std::string("GTA V path: ") + gta_exe.string());

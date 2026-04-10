@@ -38,12 +38,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\launcher\process_finder.h" />
-    <ClInclude Include="include\launcher\registry_helper.h" />
+    <ClInclude Include="include\launcher\registry_storage.h" />
     <ClInclude Include="include\launcher\injector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\process_finder.cpp" />
-    <ClCompile Include="src\registry_helper.cpp" />
+    <ClCompile Include="src\registry_storage.cpp" />
     <ClCompile Include="src\injector.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>

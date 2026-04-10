@@ -33,10 +33,3 @@ out/
 *.VC.db
 *.VC.opendb
 ipch/
-
-# Third-party build artifacts
-third_party/*/bin/
-
-# FlatBuffers generated headers
-Phantom.Shared/generated/*.h
-server/target/
