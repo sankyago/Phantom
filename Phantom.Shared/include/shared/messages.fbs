@@ -1,0 +1,52 @@
+namespace phantom.messages;
+
+enum EntityType : byte { Ped = 0, Vehicle = 1, Object = 2 }
+
+struct Vec3 {
+  x: float;
+  y: float;
+  z: float;
+}
+
+table EntityUpdate {
+  entity_id: uint32;
+  entity_type: EntityType;
+  model_hash: uint32;
+  position: Vec3;
+  rotation: Vec3;
+}
+
+table PlayerConnect {
+  player_id: uint32;
+  name: string;
+}
+
+table PlayerDisconnect {
+  player_id: uint32;
+  reason: string;
+}
+
+table ChatMessage {
+  sender_id: uint32;
+  text: string;
+}
+
+table WorldState {
+  entities: [EntityUpdate];
+  players: [PlayerConnect];
+}
+
+union MessagePayload {
+  EntityUpdate,
+  PlayerConnect,
+  PlayerDisconnect,
+  ChatMessage,
+  WorldState
+}
+
+table Message {
+  protocol_version: uint32;
+  payload: MessagePayload;
+}
+
+root_type Message;
